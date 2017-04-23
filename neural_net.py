@@ -11,9 +11,7 @@ A Jupyter notebook `coding_task.ipynb` accompanies this module and demonstrates
 basic usage of the `FullyConnectedNet` class.
 
 Example:
-    To run this module
-
-    literal blocks::
+    To run this module:
 
         $ python neural_net.py
 
