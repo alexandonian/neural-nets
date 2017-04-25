@@ -42,7 +42,7 @@ class FullyConnectedNet(object):
     """
     A feed-forward, fully-connected (dense) neural network with an arbitrary number
     of hidden layers, activations functions (nonlinearlities) and regularized cost.
-    The net has an input dimension of N, a hidden layer dimension of I, and performs
+    The net has an input dimension of N, a hidden layer dimension of I_l, and performs
     classification over O classes (non-linear functions in this case). We train the
     network with a mean squared error loss function and L2 regularization on the final
     weight matrix. The network uses a ReLU nonlinearity (by default) after all but the
@@ -54,7 +54,7 @@ class FullyConnectedNet(object):
 
     where the {...} block is repeated L - 1 times.
 
-    The outputs of the last fully-connected layer are the approximatimations for each
+    The outputs of the last fully-connected layer are the approximations for each
     nonlinear function h_i evaluated at all the points in x.
     """
 
@@ -121,7 +121,6 @@ class FullyConnectedNet(object):
 
         layer_i = " Layer {} "
         arrow = " --> "
-
         label = " " * len("Inputs ({}) --> ".format(self.layer_sizes[0]))
         diag = "Inputs ({}) --> ".format(self.layer_sizes[0])
 
@@ -220,10 +219,23 @@ class FullyConnectedNet(object):
     # Instance Methods --------------------------------------------------------
 
     def init_params(self):
+       # TODO: call appropriate initilization fn given a backend.
         pass
 
     def forward_pass(self, input, params=None, backend=None):
-        """ Compute the forward pass of a neural network given an input `input`. """
+        """Compute the forward pass of a neural network given an input `input`.
+
+        Args:
+            input (ndarray): Input data with shape (D, N).
+            params (1D array/dict): Weights and biases for the network.
+                (1D array) if backend is scipy
+                (dict) if backend is tf
+                * Note: Soon, this will handled behind the scenes.
+            backend (stf): scipy or tf. Default: scipy
+
+        Returns:
+            out (ndarray): Output data array with shape (I_L, O).
+        """
 
         if backend not in FullyConnectedNet._backends:
             backend = self.backend
@@ -260,9 +272,9 @@ class FullyConnectedNet(object):
 
         Args:
             X (ndarray): Input training data array with shape (D, N).
-            Y (ndarray): Output training data array with shape (I, O).
+            Y (ndarray): Output training data array with shape (I_L, O).
             C (int/float): Scalar indicating the regularization strength.
-            backend (str): The desired optimizer (SciPy or Tensorflow)
+            backend (str): The desired optimizer ('scipy' or 'tf')
             learning_rate (int/float): The learning rate of optimization.
             num_iter (int): Number of iterations during optimization.
             verbose (bool): If true, print progress during optimization.
@@ -339,6 +351,7 @@ class FullyConnectedNet(object):
         return self._scipy_flatten_params(b0 + params)
 
     def _scipy_cost(self, params, X, Y, C=None):
+        """Compute the of cost when using scipy backend."""
 
         C = 1 if C is None else C
         out, w2 = self._scipy_forward_pass(X, params)
@@ -365,6 +378,7 @@ class FullyConnectedNet(object):
         return shaped_params
 
     def _scipy_train(self, X, Y, C=1, learning_rate=0.001, num_iter=5e4, verbose=False):
+        """ Initiates training using the scipy backend."""
 
         def _scipy_cost(params, X, Y, C=C):
                 return self._scipy_cost(params, X, Y, C=C)
@@ -383,7 +397,7 @@ class FullyConnectedNet(object):
         return training_stats
 
     def _scipy_forward_pass(self, input, params=None):
-        """ Compute the forward pass of a neural network given an input `input`. """
+        """ Compute the forward pass of the net using the scipy backend."""
 
         if params is None:
             params = self.params
@@ -391,8 +405,8 @@ class FullyConnectedNet(object):
         sparams = self._scipy_shape_params(params)
         input = input + sparams[0]
         for wb in sparams[1:]:
-            output = np.dot(input, wb[:-1, :])         #  wb[:-1, :]: w_i (weights)
-            input = np.maximum(0, output) + wb[-1, :]  #  wb[-1, :]: b_i (biases)
+            output = np.dot(input, wb[:-1, :])         # wb[:-1, :]: w_i (weights)
+            input = np.maximum(0, output) + wb[-1, :]  # wb[-1, :]: b_i (biases)
         return output, sparams[-1][-1, :]
 
     def forward_pass_old(self, input, params=None):
@@ -409,14 +423,19 @@ class FullyConnectedNet(object):
         out = np.dot(h1, sparams[2][:-1, :]) + w2
         return out, w2
 
-
     def _tf_init_params(self):
+        """Initialize parameters for tf net in dict.
+
+        Returns:
+            params (dict): params[layer_i] = {'weights': w_l, 'biases': b_l}
+
+        """
+
         layer = 'layer_{}'
         layer_shapes = self.layer_shapes
         b0 = tf.Variable(tf.zeros([self.layer_sizes[0]]), name='b0')
         params = {layer.format(0): {'biases': b0}}
         for i, lshapes in enumerate(layer_shapes):
-            l_prev = layer.format(i)
             l_curr = layer.format(i + 1)
             with tf.name_scope(l_curr):
                 weights = tf.Variable(tf.random_normal(layer_shapes[i]), name='weights')
@@ -430,9 +449,6 @@ class FullyConnectedNet(object):
 
         These placeholders are used as inputs by the rest of the model building
         code.
-
-        Args:
-            batch_size: The batch size will be baked into both placeholders.
 
         Returns:
             input_placeholder: input data (X) placeholder
@@ -522,16 +538,20 @@ class FullyConnectedNet(object):
 
         # Add a scalar summary for the snapshot loss.
         tf.summary.scalar('cost', cost)
+
         # Create the gradient descent optimizer with the given learning rate.
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+
         # Create a variable to track the global step.
         global_step = tf.Variable(0, name='global_step', trainable=False)
+
         # Use the optimizer to apply the gradients that minimize the loss
         # (and also increment the global step counter) as a single training step.
         train_op = optimizer.minimize(cost, global_step=global_step)
         return train_op
 
     def _tf_train(self, X, Y, C=1, learning_rate=0.001, num_iter=1e4, verbose=False):
+        """Builds full tf graph and initiates training."""
 
         with tf.Graph().as_default():
 
@@ -592,6 +612,7 @@ class FullyConnectedNet(object):
             return final_out, {'error_history': error_history, 'cost_history': cost_history}
 
     def _tf_forward_pass(self, X):
+        """Compute the forward pass of the net using the tf backend."""
 
         with tf.Graph().as_default():
             # tf graph input
@@ -606,6 +627,7 @@ class FullyConnectedNet(object):
                 return sess.run(logits, {x: X})
 
     def _tf_eval_cost(self, params, X, Y, C=1):
+        """Evalulates the cost given params, inputs/outputs and reg. strength."""
 
         # tf graph input
         x, y = self._tf_init_placeholders()
@@ -755,4 +777,23 @@ if __name__ == '__main__':
     # Make a forward pass with our trained network
     FX = net.forward_pass(X)[0]
 
-    
+    plot_approximations(X, Y, FX)
+
+    N, I, E = error_surface(16, 16, step=2)
+    plot_surface(X, Y, Z)
+
+    training_stats0 = net.train(X, Y, C=0, reinitialize=True)
+
+    print('Final training error with C = {}: {}'.format(1, training_stats['error_history'][-1]))
+    print('Final training error with C = {}: {}'.format(0, training_stats0['error_history'][-1]))
+
+    # Now, create another 2 layer (not including input) net with a Tensorflow backend
+    # and display its (default) properties:
+
+    # Init and display
+    net_tf = FullyConnectedNet(layer_sizes, backend='tf')  # set tf as the backend
+    print(net_tf)
+
+    # Make a forward pass with our trained network
+    FX1 = net_tf.forward_pass(X)
+    plot_approximations(X, Y, FX1)
