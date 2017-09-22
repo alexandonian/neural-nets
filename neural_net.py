@@ -41,13 +41,15 @@ from scipy.optimize import fmin_l_bfgs_b
 
 
 class FullyConnectedNet(object):
-    """
-    A feed-forward, fully-connected (dense) neural network with an arbitrary number
-    of hidden layers, activations functions (nonlinearlities) and regularized cost.
-    The net has an input dimension of N, a hidden layer dimension of I, and performs
-    classification over O classes (non-linear functions in this case). We train the
-    network with a mean squared error loss function and L2 regularization on the final
-    weight matrix. The network uses a ReLU nonlinearity (by default) after all but the
+    """A Fully connected layer class.
+
+    A feed-forward, fully-connected (dense) neural network with an arbitrary
+    number of hidden layers, activations functions (nonlinearlities) and
+    regularized cost. The net has an input dimension of N, a hidden layer
+    dimension of I, and performs classification over O classes (non-linear
+    functions in this case). We train the network with a mean squared error
+    loss function and L2 regularization on the final weight matrix. The network
+    uses a ReLU nonlinearity (by default) after all but the
     last fully connected layer.
 
     For a network with L layers, the architecture will be:
@@ -56,8 +58,9 @@ class FullyConnectedNet(object):
 
     where the {...} block is repeated L - 1 times.
 
-    The outputs of the last fully-connected layer are the approximatimations for each
-    nonlinear function h_i evaluated at all the points in x.
+    The outputs of the last fully-connected layer are the approximatimations
+    for each nonlinear function h_i evaluated at all the points in x.
+
     """
 
     # 'Private' Class Attributes ----------------------------------------------
@@ -75,11 +78,11 @@ class FullyConnectedNet(object):
     _backends = _back_repr.keys()
 
     def __init__(self, layer_sizes, activation='relu', loss='reg_mse', C=1, backend='scipy'):
-        """
-        Initialize a new FullyConnectedNet model. Weights are initialized to
-        small random values and biases are initialized to zero. Weights and
-        biases are stored in the variable self.params, which is a dictionary
-        with the following keys:
+        """Initialize a new FullyConnectedNet model.
+
+        Weights are initialized to small random values and biases are
+        initialized to zero. Weights and biases are stored in the variable
+        self.params, which is a dictionary with the following keys:
 
         X0: Input data; has shape (D, N)
         b0: Input layer biases; has shape (N,)
@@ -225,8 +228,7 @@ class FullyConnectedNet(object):
         pass
 
     def forward_pass(self, input, params=None, backend=None):
-        """ Compute the forward pass of a neural network given an input `input`. """
-
+        """Compute the forward pass of a neural network given an input."""
         if backend not in FullyConnectedNet._backends:
             backend = self.backend
 
@@ -240,7 +242,7 @@ class FullyConnectedNet(object):
         return out
 
     def Cost(self, params, X, Y, C=1):
-        """ Compute the of cost of params given inputs X and outputs Y. """
+        """Compute the of cost of params given inputs X and outputs Y."""
 
         if self.backend is 'scipy':
             cost = self._scipy_cost(params, X, Y, C=C)
@@ -249,7 +251,7 @@ class FullyConnectedNet(object):
         return cost
 
     def dCost(self, params, X, Y, C=1):
-        """ Compute the gradient of the cost. """
+        """Compute the gradient of the cost."""
 
         f = grad(self.Cost)
         return f(params, X, Y, C)
@@ -349,7 +351,7 @@ class FullyConnectedNet(object):
         return cost
 
     def _scipy_flatten_params(self, shaped_params):
-        """ Convert a list of weights for each layer to a 1D array. """
+        """Convert a list of weights for each layer to a 1D array."""
         return np.array([w for l in shaped_params for w in l.flat])
 
     def _scipy_shape_params(self, flat_params):
@@ -385,7 +387,7 @@ class FullyConnectedNet(object):
         return training_stats
 
     def _scipy_forward_pass(self, input, params=None):
-        """ Compute the forward pass of a neural network given an input `input`. """
+        """Compute the forward pass of a neural network given an input `input`."""
 
         if params is None:
             params = self.params
@@ -756,5 +758,3 @@ if __name__ == '__main__':
 
     # Make a forward pass with our trained network
     FX = net.forward_pass(X)[0]
-
-    
